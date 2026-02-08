@@ -13,6 +13,7 @@ interface OverduePaymentInfo {
     contract: Contract;
     monthsOverdue: number;
     apartment?: Apartment;
+    totalOwed: number;
 }
 
 interface UnpaidExpiredInfo {
@@ -49,18 +50,9 @@ const DashboardPage: React.FC = () => {
             if (!user) return;
             try {
                 setLoading(true);
-
-                // First, sync expired contracts to ensure data integrity
                 await syncContractsAndApartments(user.user_id);
-                
-                // Then, fetch all data
                 const [apartmentsData, contractsData, clientsData, paymentsData, expiringData, projectsData] = await Promise.all([
-                    getApartments(),
-                    getContracts(),
-                    getClients(),
-                    getPayments(),
-                    getExpiringContracts(),
-                    getProjects()
+                    getApartments(), getContracts(), getClients(), getPayments(), getExpiringContracts(), getProjects()
                 ]);
                 setApartments(apartmentsData);
                 setContracts(contractsData);
@@ -138,11 +130,11 @@ const DashboardPage: React.FC = () => {
         const overdue: OverduePaymentInfo[] = [];
         
         activeContracts.filter(c => c.type === 'rental').forEach(contract => {
-            const startDate = new Date(contract.start_date);
+            const startDate = new Date(contract.start_date + 'T00:00:00Z');
             const monthlyRent = contract.amount_dh;
             
-            let monthsElapsed = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
-            if (today.getDate() >= startDate.getDate()) {
+            let monthsElapsed = (today.getFullYear() - startDate.getUTCFullYear()) * 12 + (today.getMonth() - startDate.getUTCMonth());
+            if (today.getDate() >= startDate.getUTCDate()) {
                 monthsElapsed += 1;
             }
             if (contract.duration_months && monthsElapsed > contract.duration_months) {
@@ -163,7 +155,7 @@ const DashboardPage: React.FC = () => {
                      const client = clients.find(c => c.id === contract.client_id);
                      const apartment = apartments.find(a => a.id === contract.apartment_id);
                      if (client) {
-                        overdue.push({ client, contract, monthsOverdue, apartment });
+                        overdue.push({ client, contract, monthsOverdue, apartment, totalOwed: remainingDebt });
                      }
                 }
             }
@@ -270,17 +262,20 @@ const DashboardPage: React.FC = () => {
 
     const renderOverdueList = (minMonths: number, maxMonths: number) => {
         const filtered = overduePaymentsInfo.filter(p => p.monthsOverdue >= minMonths && p.monthsOverdue <= maxMonths);
-        if (filtered.length === 0) return <p className="text-sm text-gray-500 text-center py-4">Aucun.</p>;
+        if (filtered.length === 0) return <p className="text-sm text-gray-500 text-center py-4">Aucun impayé trouvé.</p>;
         return (
              <ul className="divide-y divide-gray-100">
-                {filtered.map(({ client, apartment, monthsOverdue }) => (
-                    <li key={client.id} className="py-3 px-1">
+                {filtered.map(({ client, apartment, monthsOverdue, totalOwed }) => (
+                    <li key={client.id} className="py-3 px-1 hover:bg-gray-50 transition-colors rounded">
                         <Link to={`/clients/${client.id}`} className="flex justify-between items-center group">
                             <div>
-                               <p className="text-sm font-medium text-gray-800 group-hover:text-green-600">{(client.full_name || 'Client')}</p>
-                               <p className="text-xs text-gray-500">{apartment?.name}</p>
+                               <p className="text-sm font-bold text-gray-800 group-hover:text-green-600 transition-colors">{(client.full_name || 'Client')}</p>
+                               <p className="text-[10px] text-gray-500 uppercase tracking-tighter">{apartment?.name}</p>
                             </div>
-                            <span className="text-sm font-bold text-red-600">{monthsOverdue} mois</span>
+                            <div className="text-right">
+                                <span className="block text-xs font-black text-red-600">{monthsOverdue} mois</span>
+                                <span className="block text-[10px] font-bold text-black">{totalOwed.toLocaleString()} DH</span>
+                            </div>
                         </Link>
                     </li>
                 ))}
@@ -293,8 +288,8 @@ const DashboardPage: React.FC = () => {
         return (
             <button
                 onClick={() => setTimePeriod(period)}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    isActive ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-200'
+                className={`px-3 py-1 text-sm font-bold rounded-md transition-all ${
+                    isActive ? 'bg-green-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'
                 }`}
             >
                 {label}
@@ -302,9 +297,8 @@ const DashboardPage: React.FC = () => {
         )
     }
 
-    if (loading) return <div className="flex justify-center items-center h-64"><div>Chargement du tableau de bord...</div></div>;
+    if (loading) return <div className="flex justify-center items-center h-64 text-gray-500 font-bold">Chargement du tableau de bord...</div>;
 
-    // Empty state check
     if (projects.length === 0 && apartments.length === 0 && clients.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-full py-12 text-center">
@@ -313,20 +307,16 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Bienvenue sur Nafat Immobilier</h2>
                 <p className="text-gray-600 max-w-md mb-8">Votre application est prête. Commencez par créer votre premier projet immobilier.</p>
-                <Link 
-                    to="/projets"
-                    className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors shadow-sm"
-                >
-                    <PlusIcon className="w-5 h-5 mr-2" />
-                    Créer un Projet
+                <Link to="/projets" className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-all shadow-sm">
+                    <PlusIcon className="w-5 h-5 mr-2" /> Créer un Projet
                 </Link>
             </div>
         );
     }
 
     return (
-        <div>
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <h2 className="text-3xl font-bold text-gray-800">Tableau de Bord</h2>
                 <div className="flex items-center space-x-2 bg-gray-100 p-1 rounded-lg overflow-x-auto">
                     <TimePeriodButton period="this_month" label="Ce mois-ci" />
@@ -336,23 +326,19 @@ const DashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Notification Section */}
-            <div className="mb-8 space-y-4">
-                 {/* 1. Expired / Ended Recently */}
+            <div className="space-y-4">
                  {recentlyEndedRentals.length > 0 && (
                     <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
                         <div className="flex">
-                            <div className="flex-shrink-0">
-                                <ClockIcon className="h-5 w-5 text-orange-500" />
-                            </div>
+                            <div className="flex-shrink-0"><ClockIcon className="h-5 w-5 text-orange-500" /></div>
                             <div className="ml-3">
-                                <h3 className="text-sm font-medium text-orange-800">Contrats de location terminés récemment</h3>
+                                <h3 className="text-sm font-bold text-orange-800">Contrats de location terminés récemment</h3>
                                 <div className="mt-2 text-sm text-orange-700">
                                     <ul className="list-disc pl-5 space-y-1">
                                         {recentlyEndedRentals.map(({ contract, apartment, client }) => (
                                             <li key={contract.id}>
-                                                Contrat pour <strong>{apartment?.name}</strong> ({client?.full_name}) terminé le {new Date(contract.end_date!).toLocaleDateString('fr-FR')}.
-                                                <Link to={`/contrats`} className="ml-2 underline hover:text-orange-900 font-medium">Voir</Link>
+                                                <strong className="text-black">{apartment?.name}</strong> ({client?.full_name}) terminé le {new Date(contract.end_date!).toLocaleDateString('fr-FR')}.
+                                                <Link to={`/contrats`} className="ml-2 underline hover:text-orange-900 font-bold transition-colors">Voir</Link>
                                             </li>
                                         ))}
                                     </ul>
@@ -361,21 +347,18 @@ const DashboardPage: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {/* 2. Unsettled Sales */}
                 {unsettledSalesInfo.length > 0 && (
                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm">
                         <div className="flex">
-                            <div className="flex-shrink-0">
-                                <CoinsIcon className="h-5 w-5 text-blue-500" />
-                            </div>
+                            <div className="flex-shrink-0"><CoinsIcon className="h-5 w-5 text-blue-500" /></div>
                             <div className="ml-3">
-                                <h3 className="text-sm font-medium text-blue-800">Ventes non soldées (Reste à payer)</h3>
+                                <h3 className="text-sm font-bold text-blue-800">Ventes non soldées (Versements restants)</h3>
                                 <div className="mt-2 text-sm text-blue-700">
                                     <ul className="list-disc pl-5 space-y-1">
                                         {unsettledSalesInfo.map(({ contract, apartment, client, remaining }) => (
                                             <li key={contract.id}>
-                                                <strong>{apartment?.name}</strong> ({client?.full_name}) - Reste: <strong>{remaining.toLocaleString()} DH</strong>
-                                                <Link to={`/clients/${client?.id}`} className="ml-2 underline hover:text-blue-900 font-medium">Détails</Link>
+                                                <strong className="text-black">{apartment?.name}</strong> ({client?.full_name}) - Reste: <strong className="text-black">{remaining.toLocaleString()} DH</strong>
+                                                <Link to={`/clients/${client?.id}`} className="ml-2 underline hover:text-blue-900 font-bold transition-colors">Encaisser</Link>
                                             </li>
                                         ))}
                                     </ul>
@@ -384,21 +367,18 @@ const DashboardPage: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {/* 3. Unpaid Expired Contracts */}
                 {unpaidExpiredContractsInfo.length > 0 && (
                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
                         <div className="flex">
-                            <div className="flex-shrink-0">
-                                <AlertTriangleIcon className="h-5 w-5 text-red-500" />
-                            </div>
+                            <div className="flex-shrink-0"><AlertTriangleIcon className="h-5 w-5 text-red-500" /></div>
                             <div className="ml-3">
-                                <h3 className="text-sm font-medium text-red-800">Contrats terminés/expirés avec impayés</h3>
+                                <h3 className="text-sm font-bold text-red-800">Alerte : Impayés sur contrats expirés</h3>
                                 <div className="mt-2 text-sm text-red-700">
                                     <ul className="list-disc pl-5 space-y-1">
                                         {unpaidExpiredContractsInfo.map(({ contract, apartment, client, unpaidMonths }) => (
                                             <li key={contract.id}>
-                                                <strong>{apartment?.name}</strong> ({client?.full_name}) - <strong>{unpaidMonths} mois impayés</strong>
-                                                <Link to={`/clients/${client?.id}`} className="ml-2 underline hover:text-red-900 font-medium">Voir le client</Link>
+                                                <strong className="text-black">{apartment?.name}</strong> ({client?.full_name}) - <strong className="text-red-700">{unpaidMonths} mois impayés</strong>
+                                                <Link to={`/clients/${client?.id}`} className="ml-2 underline hover:text-red-900 font-bold transition-colors">Détails client</Link>
                                             </li>
                                         ))}
                                     </ul>
@@ -409,107 +389,71 @@ const DashboardPage: React.FC = () => {
                 )}
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <StatCard 
-                    title="Revenus Locatifs"
-                    value={`${rentalRevenue.toLocaleString()} DH`}
-                    icon={<DollarSignIcon />}
-                    color="green"
-                />
-                <StatCard 
-                    title="Revenus Ventes"
-                    value={`${salesRevenue.toLocaleString()} DH`}
-                    icon={<DollarSignIcon />}
-                    color="purple"
-                />
-                 <StatCard 
-                    title="Propriétés Louées"
-                    value={rentedApartmentsCount}
-                    icon={<HomeIcon />}
-                    color="blue"
-                />
-                <StatCard 
-                    title="Taux d'Occupation"
-                    value={`${occupancyRate.toFixed(1)}%`}
-                    icon={<TrendingUpIcon />}
-                    color="indigo"
-                />
-                <StatCard 
-                    title="Paiements en Retard / Impayés"
-                    value={totalOverdueAndUnpaidCount}
-                    icon={<AlertTriangleIcon />}
-                    color="red"
-                />
-                <StatCard 
-                    title="Propriétés Vendues"
-                    value={`${soldApartmentsCount}`}
-                    icon={<BuildingIcon />}
-                    color="yellow"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <StatCard title="Revenus Locatifs" value={`${rentalRevenue.toLocaleString()} DH`} icon={<DollarSignIcon />} color="green" />
+                <StatCard title="Revenus Ventes" value={`${salesRevenue.toLocaleString()} DH`} icon={<DollarSignIcon />} color="purple" />
+                <StatCard title="Taux d'Occupation" value={`${occupancyRate.toFixed(1)}%`} icon={<TrendingUpIcon />} color="indigo" />
+                <StatCard title="Impayés / Retards" value={totalOverdueAndUnpaidCount} icon={<AlertTriangleIcon />} color="red" />
+                <StatCard title="Unités Louées" value={rentedApartmentsCount} icon={<HomeIcon />} color="blue" />
+                <StatCard title="Unités Vendues" value={`${soldApartmentsCount}`} icon={<BuildingIcon />} color="yellow" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <DashboardSection 
-                    title="Suivi des Paiements en Retard (Contrats Actifs)"
+                    title="Analyse des Impayés (Contrats Actifs)"
                     icon={<AlertTriangleIcon className="text-red-500"/>}
                     className="lg:col-span-2"
                 >
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6">
                         <div className="border-r border-gray-100 sm:pr-4">
-                            <h4 className="font-semibold text-gray-700 mb-2 text-center text-sm border-b pb-2">1 Mois de Retard</h4>
+                            <h4 className="font-bold text-gray-700 mb-2 text-center text-xs uppercase tracking-widest border-b pb-2">1 Mois de Retard</h4>
                             {renderOverdueList(1, 1)}
                         </div>
                         <div className="border-r border-gray-100 sm:pr-4">
-                            <h4 className="font-semibold text-gray-700 mb-2 text-center text-sm border-b pb-2">2 Mois de Retard</h4>
+                            <h4 className="font-bold text-gray-700 mb-2 text-center text-xs uppercase tracking-widest border-b pb-2">2 Mois de Retard</h4>
                             {renderOverdueList(2, 2)}
                         </div>
                         <div>
-                            <h4 className="font-semibold text-gray-700 mb-2 text-center text-sm border-b pb-2">3+ Mois de Retard</h4>
+                            <h4 className="font-bold text-gray-700 mb-2 text-center text-xs uppercase tracking-widest border-b pb-2">3+ Mois de Retard</h4>
                             {renderOverdueList(3, Infinity)}
                         </div>
                     </div>
                 </DashboardSection>
 
-                <DashboardSection
-                    title="Contrats Expirés et Impayés"
-                    icon={<AlertTriangleIcon className="text-orange-500" />}
-                >
-                     {unpaidExpiredContractsInfo.length > 0 ? (
-                        <ul className="divide-y divide-gray-100 -mx-6 -my-6">
-                            {unpaidExpiredContractsInfo.map(({ client, contract, apartment, unpaidMonths }) => (
-                                <li key={contract.id} className="py-3 px-6 hover:bg-gray-50/50">
-                                    <Link to={`/clients/${client?.id}`} className="flex justify-between items-center group">
-                                      <div>
-                                          <p className="text-sm font-medium text-gray-800 group-hover:text-green-600">{(client?.full_name || 'Client')}</p>
-                                          <p className="text-xs text-gray-500">{apartment?.name}</p>
-                                      </div>
-                                      <span className="text-sm text-red-600 font-bold">{unpaidMonths} mois impayé{unpaidMonths > 1 ? 's' : ''}</span>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className="text-sm text-gray-500 text-center py-4">Aucun contrat expiré impayé.</p>}
-                </DashboardSection>
-
-                <DashboardSection
-                    title="Contrats Expirant Bientôt"
-                    icon={<FileTextIcon className="text-yellow-500" />}
-                >
+                <DashboardSection title="Renouvellements Proches" icon={<FileTextIcon className="text-yellow-500" />}>
                     {expiringContractsInfo.length > 0 ? (
                         <ul className="divide-y divide-gray-100 -mx-6 -my-6">
                             {expiringContractsInfo.map(({ client, contract, apartment }) => (
-                                <li key={contract.id} className="py-3 px-6 hover:bg-gray-50/50">
+                                <li key={contract.id} className="py-3 px-6 hover:bg-gray-50/50 transition-colors">
                                     <Link to={`/clients/${client?.id}`} className="flex justify-between items-center group">
                                       <div>
-                                          <p className="text-sm font-medium text-gray-800 group-hover:text-green-600">{(client?.full_name || 'Client')}</p>
-                                          <p className="text-xs text-gray-500">{apartment?.name}</p>
+                                          <p className="text-sm font-bold text-gray-800 group-hover:text-green-600 transition-colors">{(client?.full_name || 'Client')}</p>
+                                          <p className="text-xs text-gray-500 font-medium uppercase">{apartment?.name}</p>
                                       </div>
-                                      <span className="text-sm text-gray-600 font-medium">{new Date(contract.end_date!).toLocaleDateString('fr-FR')}</span>
+                                      <span className="text-sm text-black font-bold">{new Date(contract.end_date!).toLocaleDateString('fr-FR')}</span>
                                     </Link>
                                 </li>
                             ))}
                         </ul>
-                    ) : <p className="text-sm text-gray-500 text-center py-4">Aucun contrat n'expire dans les 60 prochains jours.</p>}
+                    ) : <p className="text-sm text-gray-500 text-center py-4 font-medium italic">Aucun renouvellement dans les 60 jours.</p>}
+                </DashboardSection>
+
+                <DashboardSection title="Ventes à Perception" icon={<CoinsIcon className="text-indigo-500" />}>
+                     {unsettledSalesInfo.length > 0 ? (
+                        <ul className="divide-y divide-gray-100 -mx-6 -my-6">
+                            {unsettledSalesInfo.map(({ client, contract, apartment, remaining }) => (
+                                <li key={contract.id} className="py-3 px-6 hover:bg-gray-50/50 transition-colors">
+                                    <Link to={`/clients/${client?.id}`} className="flex justify-between items-center group">
+                                      <div>
+                                          <p className="text-sm font-bold text-gray-800 group-hover:text-green-600 transition-colors">{(client?.full_name || 'Client')}</p>
+                                          <p className="text-xs text-gray-500 uppercase tracking-tighter font-medium">{apartment?.name}</p>
+                                      </div>
+                                      <span className="text-sm text-indigo-700 font-black">{remaining.toLocaleString()} DH</span>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-sm text-gray-500 text-center py-4 font-medium italic">Toutes les ventes sont soldées ✓</p>}
                 </DashboardSection>
             </div>
         </div>

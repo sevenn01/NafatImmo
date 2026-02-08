@@ -1,16 +1,15 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { DashboardIcon, BuildingIcon, HomeIcon, UsersIcon, FileTextIcon, PaymentIcon, SettingsIcon } from './icons/Icons';
+import { DashboardIcon, BuildingIcon, HomeIcon, UsersIcon, FileTextIcon, PaymentIcon, SettingsIcon, AlertTriangleIcon, PaperclipIcon } from './icons/Icons';
 import { useAuth } from '../auth/AuthContext';
 
 const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const commonLinkClass = "flex items-center px-4 py-2.5 text-gray-600 transition-colors duration-200 transform rounded-lg";
-  const activeLinkClass = "bg-gray-200 text-gray-800";
+  const activeLinkClass = "bg-gray-200 text-gray-800 shadow-sm";
   const inactiveLinkClass = "hover:bg-gray-100";
   
-  // Safe permission check
   const canView = (section: keyof typeof user.permissions) => {
       if (!user || !user.permissions) return false;
       return user.permissions[section]?.view;
@@ -48,7 +47,7 @@ const Sidebar: React.FC = () => {
                 className={({ isActive }) => `${commonLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass} mt-2`}
               >
                 <HomeIcon className="w-5 h-5" />
-                <span className="ml-3 font-medium">Appartements</span>
+                <span className="ml-3 font-medium">Propriétés</span>
               </NavLink>
           )}
           {canView('clients') && (
@@ -69,15 +68,34 @@ const Sidebar: React.FC = () => {
                 <span className="ml-3 font-medium">Contrats</span>
               </NavLink>
           )}
+          
+
           {canView('payments') && (
-              <NavLink
-                to="/paiements"
-                className={({ isActive }) => `${commonLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass} mt-2`}
-              >
-                <PaymentIcon className="w-5 h-5" />
-                <span className="ml-3 font-medium">Paiements</span>
-              </NavLink>
+              <>
+                  <NavLink
+                    to="/paiements"
+                    className={({ isActive }) => `${commonLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass} mt-2`}
+                  >
+                    <PaymentIcon className="w-5 h-5" />
+                    <span className="ml-3 font-medium">Paiements</span>
+                  </NavLink>
+                  <NavLink
+                    to="/documents-paiements"
+                    className={({ isActive }) => `${commonLinkClass} ${isActive ? 'bg-green-50 text-green-700' : 'hover:bg-green-50 text-gray-600'} mt-1`}
+                  >
+                    <PaperclipIcon className="w-5 h-5" />
+                    <span className="ml-3 font-medium">Documents</span>
+                  </NavLink>
+              </>
           )}
+          
+          <NavLink
+            to="/rejets"
+            className={({ isActive }) => `${commonLinkClass} ${isActive ? 'bg-red-50 text-red-700' : 'hover:bg-red-50 text-gray-600'} mt-2`}
+          >
+            <AlertTriangleIcon className="w-5 h-5" />
+            <span className="ml-3 font-medium">Désistements</span>
+          </NavLink>
         </nav>
         
         <div className="pt-4 border-t border-gray-200">

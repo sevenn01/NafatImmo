@@ -4,7 +4,6 @@ import React from 'react';
 interface IconProps {
     className?: string;
     onClick?: () => void;
-    // FIX: Add optional title prop for tooltips and to fix type errors.
     title?: string;
 }
 
@@ -38,6 +37,18 @@ export const FileTextIcon: React.FC<IconProps> = ({ className }) => (
     </svg>
 );
 
+export const PaperclipIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+    </svg>
+);
+
+export const DownloadIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+);
+
 export const PlusIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
@@ -65,7 +76,6 @@ export const TrashIcon: React.FC<IconProps> = ({ className, onClick, title }) =>
 
 export const EyeIcon: React.FC<IconProps> = ({ className, onClick, title }) => (
     <svg onClick={onClick} xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {/* FIX: Add title for tooltip */}
         {title && <title>{title}</title>}
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
     </svg>
@@ -180,7 +190,6 @@ export const XCircleIcon: React.FC<IconProps> = ({ className, onClick }) => (
 
 export const RefreshCwIcon: React.FC<IconProps> = ({ className, onClick, title }) => (
     <svg onClick={onClick} xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {/* FIX: Add title for tooltip */}
         {title && <title>{title}</title>}
         <path d="M3 2v6h6"></path><path d="M21 22v-6h-6"></path><path d="M21.17 6.83A10 10 0 0 0 3.83 17.17"></path><path d="M2.83 7.17A10 10 0 0 0 20.17 16.83"></path>
     </svg>

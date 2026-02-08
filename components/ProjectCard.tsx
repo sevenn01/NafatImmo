@@ -16,50 +16,30 @@ const getRentalStatus = (project: Project): RentalStatus => {
     const total = project.total_apartments;
     const rented = project.rented_apartments_count ?? 0;
     const sold = project.sold_apartments_count ?? 0;
+    const registered = (project as any).registered_count ?? 0; // Use a calculation if needed
     
-    // Total available for rent = Total - Sold
-    const rentable = total - sold;
-
     if (total === 0) return 'Vide';
-    
-    // If all apartments are sold
-    if (rentable === 0 && sold > 0) return 'Vendu';
-    
-    // If we have rentable units
-    if (rentable > 0) {
-        if (rented === rentable) return 'Complet';
-        if (rented > 0) return 'Partiellement Loué';
-        return 'Disponible';
-    }
-    
-    // Fallback if no units
-    return 'Vide';
+    if (rented + sold === total) return 'Complet';
+    if (rented + sold > 0) return 'Partiellement Loué';
+    return 'Disponible';
 };
 
 const getRentalStatusClasses = (status: RentalStatus) => {
     switch (status) {
-        case 'Complet':
-            return 'bg-blue-100 text-blue-800';
-        case 'Partiellement Loué':
-            return 'bg-green-100 text-green-800';
-        case 'Disponible':
-            return 'bg-yellow-100 text-yellow-800';
-        case 'Vendu':
-            return 'bg-gray-200 text-gray-800';
-        case 'Vide':
-            return 'bg-gray-100 text-gray-500';
-        default:
-            return 'bg-gray-100 text-gray-800';
+        case 'Complet': return 'bg-blue-100 text-blue-800';
+        case 'Partiellement Loué': return 'bg-green-100 text-green-800';
+        case 'Disponible': return 'bg-yellow-100 text-yellow-800';
+        case 'Vendu': return 'bg-gray-200 text-gray-800';
+        case 'Vide': return 'bg-gray-100 text-gray-500';
+        default: return 'bg-gray-100 text-gray-800';
     }
 };
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDelete }) => {
   const rentalStatus = getRentalStatus(project);
-  const rented = project.rented_apartments_count ?? 0;
-  const sold = project.sold_apartments_count ?? 0;
-  const total = project.total_apartments;
-  // Calculate total rentable units for display
-  const rentableTotal = total - sold;
+  const capacity = project.total_apartments;
+  // registered_count is passed in projects list from ProjectsPage
+  const registered = (project as any).registered_count ?? 0;
   
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200 flex flex-col">
@@ -78,15 +58,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDelete }) 
       <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
         <div>
             <p className="text-sm font-medium text-gray-800">
-                <span className="font-bold">{rented} / {rentableTotal}</span> Loués
-                {sold > 0 && <span className="ml-2 text-xs text-gray-500">({sold} Vendus)</span>}
+                <span className="font-bold">{registered} / {capacity}</span> Enregistrés
             </p>
         </div>
         <div className="flex items-center space-x-2">
-            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
                 <EditIcon className="w-5 h-5 text-gray-500" />
             </button>
-             <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-full hover:bg-red-100 transition-colors">
+             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }} className="p-2 rounded-full hover:bg-red-100 transition-colors">
                 <TrashIcon className="w-5 h-5 text-gray-500 hover:text-red-600" />
             </button>
         </div>

@@ -34,23 +34,25 @@ export enum PaymentStatus {
 export type PaymentMethod = 'especes' | 'cheque' | 'virement' | 'effet';
 
 export interface Project {
-  id: string; // Use id for consistency
+  id: string;
   project_id: string;
   project_name: string;
   location: string;
   description: string;
   total_apartments: number;
-  rented_apartments_count?: number; // Added for dashboard
-  sold_apartments_count?: number; // Added for accurate status
+  rented_apartments_count?: number;
+  sold_apartments_count?: number;
   status: ProjectStatus;
   created_at: string;
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  num_floors: number;
+  has_rdc: boolean;
 }
 
 export interface Apartment {
-  id: string; // Use id for consistency
+  id: string;
   apartment_id: string;
   project_id: string;
   name: string;
@@ -62,8 +64,8 @@ export interface Apartment {
   bathroom?: number;
   kitchen?: boolean;
   status: ApartmentStatus;
-  price_dh: number; // Represents rent price
-  sale_price_dh?: number; // Represents sale price
+  price_dh: number;
+  sale_price_dh?: number;
   owner_name: string;
   description: string;
   current_contract_id?: string;
@@ -71,10 +73,11 @@ export interface Apartment {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  intended_for: 'sale' | 'rental';
 }
 
 export interface Client {
-  id: string; // Use id for consistency
+  id: string;
   client_id: string;
   full_name: string;
   phone: string;
@@ -87,42 +90,45 @@ export interface Client {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  has_rejection?: boolean;
+  rejection_count?: number;
 }
 
 export interface Contract {
-  id: string; // Use id for consistency
+  id: string;
   contract_id: string;
   client_id: string;
   apartment_id: string;
   project_id: string;
-  amount_dh: number; // Rent amount for rentals, sale price for sales
+  amount_dh: number;
   type: 'rental' | 'sale';
-  start_date: string; // Start date for rental, sale date for sale
+  start_date: string;
   status: ContractStatus;
   notes: string;
   created_at: string;
   updated_at: string;
   created_by?: string;
   updated_by?: string;
-
-  // Rental-specific fields
   duration_months?: number;
   end_date?: string;
   months_left?: number;
   previous_contract_id?: string;
   renewed_contract_id?: string;
+  rejection_reason?: string;
 }
 
 export interface Payment {
-    id: string; // Use id for consistency
+    id: string;
     payment_id: string;
     contract_id: string;
     client_id: string;
     amount_dh: number;
     payment_date: string;
-    payment_for: string; // Generic field for "October Rent", "Down Payment", etc.
+    payment_for: string;
+    notes?: string;
     status: PaymentStatus;
     receipt_url?: string;
+    proof_url?: string; // New field for uploaded payment evidence
     payment_method: PaymentMethod;
     cheque_number?: string;
     bank_name?: string;
@@ -142,13 +148,13 @@ export interface PermissionSet {
 }
 
 export interface AppPermissions {
-    dashboard: PermissionSet; // Added dashboard permission
+    dashboard: PermissionSet;
     projects: PermissionSet;
     apartments: PermissionSet;
     clients: PermissionSet;
     contracts: PermissionSet;
     payments: PermissionSet;
-    settings: PermissionSet; // Access to settings page
+    settings: PermissionSet;
 }
 
 export interface User {
@@ -156,7 +162,7 @@ export interface User {
     user_id: string;
     name: string;
     email: string;
-    password?: string; // Stored for this template (should be secured in real app)
+    password?: string;
     role: 'admin' | 'agent';
     permissions: AppPermissions;
     avatar_url: string;
@@ -170,4 +176,5 @@ export interface ReceiptData {
     contract: Contract;
     apartment: Apartment;
     project: Project;
+    allContractPayments: Payment[];
 }

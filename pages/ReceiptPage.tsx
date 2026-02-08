@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Payment, Client, Contract, Apartment, Project, ReceiptData } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Payment, Client, Contract, Apartment, Project, ReceiptData, PaymentStatus } from '../types';
 import { CloseIcon, PrinterIcon, FileTextIcon } from '../components/icons/Icons';
 import { getReceiptData } from '../services/api';
 
@@ -65,6 +65,19 @@ const ReceiptPage: React.FC<ReceiptProps> = ({ paymentId, onClose }) => {
         fetchReceiptData();
     }, [paymentId]);
     
+    const totals = useMemo(() => {
+        if (!data) return { totalPaid: 0, remaining: 0 };
+        const { contract, allContractPayments } = data;
+        const totalPaid = allContractPayments
+            .filter(p => p.status === PaymentStatus.Paid)
+            .reduce((sum, p) => sum + p.amount_dh, 0);
+        
+        return {
+            totalPaid,
+            remaining: Math.max(0, contract.amount_dh - totalPaid)
+        };
+    }, [data]);
+
     const handleDownloadPdf = () => {
         const element = receiptRef.current;
         if (element && window.html2pdf) {
@@ -124,7 +137,7 @@ const ReceiptPage: React.FC<ReceiptProps> = ({ paymentId, onClose }) => {
                         </svg>
                         <div className="text-center border-r-2 border-l-2 border-black px-2 py-1">
                             <h1 className="text-xl font-bold tracking-wider">NAFAT IMMO</h1>
-                            <p className="text-xs tracking-widest">REAL ESTANE</p>
+                            <p className="text-xs tracking-widest">REAL ESTATE</p>
                         </div>
                     </div>
                      <div className="flex items-center h-full px-4">
@@ -185,11 +198,18 @@ const ReceiptPage: React.FC<ReceiptProps> = ({ paymentId, onClose }) => {
 
                     <div className="pt-4">
                         <div className="flex justify-between items-center text-sm font-medium">
-                           <span className="font-bold text-black">{isRental ? "Montant du Loyer Payé" : "Montant D'AVANCE"}</span>
+                           <span className="font-bold text-black">{isRental ? "Montant du Loyer Payé" : "Montant Reçu"}</span>
                            <span className="font-bold text-black" style={{direction: 'rtl'}}>{isRental ? "مبلغ الكراء المؤدى" : "المبلغ المستلم"}</span>
                         </div>
                         <div className="border-2 border-black w-full text-center py-2 mt-1 font-bold text-lg text-black">{`${payment.amount_dh.toLocaleString('fr-FR')} DH`} </div>
                     </div>
+
+                    {!isRental && (
+                        <div className="pt-4 grid grid-cols-2 gap-x-8">
+                             <LabeledField frLabel="Total cumulé payé" arLabel="إجمالي المدفوع" value={`${totals.totalPaid.toLocaleString('fr-FR')} DH`} />
+                             <LabeledField frLabel="Reste à payer" arLabel="المبلغ المتبقي" value={`${totals.remaining.toLocaleString('fr-FR')} DH`} />
+                        </div>
+                    )}
 
 
                     <div className="pt-6">
@@ -200,7 +220,7 @@ const ReceiptPage: React.FC<ReceiptProps> = ({ paymentId, onClose }) => {
                             <PaymentCheckbox label="Chèque" arLabel="شيك" checked={payment.payment_method === 'cheque'} />
                         </div>
                         <div className="mt-4 space-y-1 text-sm">
-                            <LabeledField frLabel="Compte N°" value={getPaymentDetailValue(payment, 'account')} arLabel="حساب رقم" />
+                            <LabeledField frLabel="Compte / Réf N°" value={getPaymentDetailValue(payment, 'account')} arLabel="حساب رقم" />
                             <LabeledField frLabel="Banque" value={getPaymentDetailValue(payment, 'bank')} arLabel="بنك" />
                         </div>
                     </div>
@@ -210,7 +230,7 @@ const ReceiptPage: React.FC<ReceiptProps> = ({ paymentId, onClose }) => {
                     <div className="w-1/2 border-2 border-black p-2 text-xs">
                        {isRental 
                          ? "Cette quittance annule tous les reçus qui auraient pu être donnés précédemment pour acomptes versés sur le présent terme."
-                         : "Le présent reçu est nul non avenu si un des articles du contrat de vente signé et légalisé par le client n'est pas respecté."
+                         : "Le présent reçu confirme le versement d'un acompte ou d'un solde dans le cadre du contrat de vente référencé ci-dessus."
                        }
                     </div>
                     <div className="w-1/2 flex justify-end space-x-4">
@@ -244,7 +264,7 @@ const ReceiptPage: React.FC<ReceiptProps> = ({ paymentId, onClose }) => {
                            width: 100%;
                            height: 100%;
                            margin: 0;
-                           padding: 1.5rem; /* Simulate the visual padding */
+                           padding: 1.5rem;
                            border: none;
                            box-shadow: none;
                            color-adjust: exact;

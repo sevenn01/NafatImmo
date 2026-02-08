@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getClients, getPayments, getContracts, getApartments, addPayment } from '../services/api';
@@ -25,6 +26,7 @@ const getContractStatusBadge = (status: ContractStatus) => {
     case ContractStatus.Canceled: return `${baseClasses} bg-red-100 text-red-800`;
     case ContractStatus.Renewed: return `${baseClasses} bg-blue-100 text-blue-800`;
     case ContractStatus.SaleCompleted: return `${baseClasses} bg-indigo-100 text-indigo-800`;
+    case ContractStatus.SaleInProgress: return `${baseClasses} bg-yellow-100 text-orange-800 border border-orange-200`;
     default: return `${baseClasses} bg-gray-100 text-gray-800`;
   }
 };
@@ -164,98 +166,119 @@ const ClientDetailsPage: React.FC = () => {
     }
 
 
-    if (loading) return <div>Chargement des détails du client...</div>;
-    if (!client) return <div>Client non trouvé.</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500 font-bold">Chargement du dossier client...</div>;
+    if (!client) return <div className="p-8 text-center text-red-500 font-bold">Client introuvable.</div>;
 
     return (
         <div>
-            <Link to="/clients" className="text-sm text-green-600 hover:underline mb-4 block">&larr; Retour à la liste des clients</Link>
+            <Link to="/clients" className="text-sm font-bold text-green-600 hover:underline mb-6 block flex items-center">&larr; Retour à l'annuaire des clients</Link>
             
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">{client.full_name}</h2>
-                <p className="text-gray-600">{client.occupation}</p>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <p><strong className="font-medium text-gray-800">Email:</strong> {client.email}</p>
-                    <p><strong className="font-medium text-gray-800">Téléphone:</strong> {client.phone}</p>
-                    <p><strong className="font-medium text-gray-800">Adresse:</strong> {client.address}</p>
-                    <p><strong className="font-medium text-gray-800">CIN:</strong> {client.cin_number}</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-900">{client.full_name}</h2>
+                        <p className="text-gray-500 font-medium uppercase tracking-wide mt-1">{client.occupation || 'Particulier'}</p>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">ID Client</span>
+                        <span className="font-mono text-sm bg-gray-100 px-3 py-1 rounded-lg text-gray-600">{client.id.substring(0,8).toUpperCase()}</span>
+                    </div>
+                </div>
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">E-mail</p>
+                        <p className="font-bold text-gray-800 break-all">{client.email || 'N/A'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Téléphone</p>
+                        <p className="font-bold text-gray-800">{client.phone}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Adresse</p>
+                        <p className="font-bold text-gray-800 line-clamp-1">{client.address || 'Non spécifiée'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">CIN / Passeport</p>
+                        <p className="font-bold text-gray-800">{client.cin_number}</p>
+                    </div>
                 </div>
             </div>
 
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Historique des Contrats</h3>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 px-2">Engagements Contractuels</h3>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-10">
                 <div className="overflow-x-auto">
                     {clientContractsWithDetails.length > 0 ? (
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Appartement</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Période / Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Montant Total (DH)</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Montant Payé (DH)</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Montant Restant (DH)</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut Contrat</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Unité</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Période / Date</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Montant Total</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Déjà Encaissé</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Reliquat</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Statut</th>
+                                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {clientContractsWithDetails.map(c => (
-                                    <tr key={c.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{c.apartmentName}</td>
+                                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black">{c.apartmentName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {c.type === 'rental' ? `${new Date(c.start_date).toLocaleDateString('fr-FR')} - ${c.end_date ? new Date(c.end_date).toLocaleDateString('fr-FR') : 'N/A'}` : `Vente le ${new Date(c.start_date).toLocaleDateString('fr-FR')}`}
+                                            {c.type === 'rental' ? `${new Date(c.start_date).toLocaleDateString('fr-FR')} - ${c.end_date ? new Date(c.end_date).toLocaleDateString('fr-FR') : 'N/A'}` : `Signé le ${new Date(c.start_date).toLocaleDateString('fr-FR')}`}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.amount_dh.toLocaleString()}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-700">{c.totalPaid > 0 ? c.totalPaid.toLocaleString() : '-'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-700">{c.type === 'sale' && c.remainingAmount > 0 ? c.remainingAmount.toLocaleString() : '-'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black">{c.amount_dh.toLocaleString()} DH</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">{c.totalPaid > 0 ? `${c.totalPaid.toLocaleString()} DH` : '-'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-600">{c.type === 'sale' && c.remainingAmount > 0 ? `${c.remainingAmount.toLocaleString()} DH` : '-'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap"><span className={getContractStatusBadge(c.status)}>{translateContractStatus(c.status)}</span></td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-6 py-4 whitespace-nowrap text-center">
                                             {c.type === 'sale' && c.remainingAmount > 0 ? (
-                                                <button onClick={() => handleOpenPaymentModal(c)} className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 flex items-center">
-                                                   <CoinsIcon className="w-4 h-4 mr-1.5" /> Recouvrer
+                                                <button onClick={() => handleOpenPaymentModal(c)} className="mx-auto px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center shadow-sm">
+                                                   <CoinsIcon className="w-4 h-4 mr-1.5" /> Encaisser le solde
                                                 </button>
                                             ) : (
-                                                <span className="text-gray-400">-</span>
+                                                <span className="text-gray-300">-</span>
                                             )}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    ) : <p className="p-6 text-sm text-gray-500">Aucun contrat trouvé pour ce client.</p>}
+                    ) : <p className="p-10 text-center text-sm text-gray-500 italic">Aucun engagement actif pour ce client.</p>}
                 </div>
             </div>
 
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Historique des Paiements</h3>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 px-2">Historique des Versements</h3>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-10">
                 <div className="overflow-x-auto">
                     {payments.length > 0 ? (
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Montant (DH)</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date de Paiement</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Méthode</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Objet / Description</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Montant</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Méthode</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Statut</th>
+                                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Documents</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {payments.map(p => (
-                                    <tr key={p.id} className="hover:bg-gray-50">
+                                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{p.payment_for}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{p.amount_dh.toLocaleString()}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black">{p.amount_dh.toLocaleString()} DH</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(p.payment_date).toLocaleDateString('fr-FR')}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{p.payment_method}</td>
                                         <td className="px-6 py-4 whitespace-nowrap"><span className={getPaymentStatusBadge(p.status)}>{translatePaymentStatus(p.status)}</span></td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
                                             {p.status !== PaymentStatus.Canceled && (
                                                 <button
                                                     onClick={() => setReceiptPaymentId(p.id)}
-                                                    title="Imprimer le reçu"
+                                                    className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                                                    title="Générer reçu PDF"
                                                 >
-                                                    <PrinterIcon className="w-5 h-5 text-gray-500 hover:text-blue-600 cursor-pointer" />
+                                                    <PrinterIcon className="w-5 h-5" />
                                                 </button>
                                             )}
                                         </td>
@@ -263,26 +286,53 @@ const ClientDetailsPage: React.FC = () => {
                                 ))}
                             </tbody>
                         </table>
-                    ) : <p className="p-6 text-sm text-gray-500">Aucun paiement trouvé pour ce client.</p>}
+                    ) : <p className="p-10 text-center text-sm text-gray-500 italic">Aucun paiement enregistré pour ce client.</p>}
                 </div>
             </div>
 
-            <Modal title={`Ajouter un paiement pour ${apartments.find(a => a.id === selectedContract?.apartment_id)?.name}`} isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)}>
-                <form onSubmit={handleAddPayment} className="space-y-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm font-medium text-gray-800">Client: {client.full_name}</p>
-                        <p className="text-sm text-gray-600">Montant restant du contrat: <span className="font-bold">{clientContractsWithDetails.find(c => c.id === selectedContract?.id)?.remainingAmount.toLocaleString()} DH</span></p>
+            <Modal title={`Recouvrement : ${apartments.find(a => a.id === selectedContract?.apartment_id)?.name}`} isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)}>
+                <form onSubmit={handleAddPayment} className="space-y-5">
+                    <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex justify-between items-center">
+                        <span className="text-indigo-900 font-bold">Reliquat à percevoir :</span>
+                        <span className="text-xl font-black text-indigo-700">{clientContractsWithDetails.find(c => c.id === selectedContract?.id)?.remainingAmount.toLocaleString()} DH</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label htmlFor="amount_dh" className="block text-sm font-medium text-gray-700">Montant Payé (DH)</label><input type="number" step="0.01" name="amount_dh" id="amount_dh" required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div>
-                        <div><label htmlFor="payment_for" className="block text-sm font-medium text-gray-700">Description du paiement</label><input type="text" name="payment_for" id="payment_for" placeholder="ex: Versement 2, Solde..." required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div>
+                        <div>
+                            <label htmlFor="amount_dh" className="block text-sm font-bold text-gray-700">Montant Encaissé (DH)</label>
+                            <input type="number" step="any" name="amount_dh" id="amount_dh" required className="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 font-bold text-lg" />
+                        </div>
+                        <div>
+                            <label htmlFor="payment_for" className="block text-sm font-bold text-gray-700">Description du versement</label>
+                            <input type="text" name="payment_for" id="payment_for" placeholder="ex: Versement 2, Solde..." required className="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 font-bold" />
+                        </div>
                     </div>
-                    <div><label htmlFor="payment_date" className="block text-sm font-medium text-gray-700">Date de paiement</label><input type="date" name="payment_date" id="payment_date" required defaultValue={new Date().toISOString().substring(0, 10)} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div>
-                    <div><label className="block text-sm font-medium text-gray-700">Méthode de paiement</label><select onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} value={paymentMethod} className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"><option value="especes">Espèces</option><option value="cheque">Chèque</option><option value="virement">Virement</option><option value="effet">Effet</option></select></div>
-                    {paymentMethod === 'cheque' && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label htmlFor="cheque_number" className="block text-sm font-medium text-gray-700">N° de chèque</label><input type="text" name="cheque_number" id="cheque_number" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div><div><label htmlFor="bank_name" className="block text-sm font-medium text-gray-700">Nom de la banque</label><input type="text" name="bank_name" id="bank_name" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div></div>)}
-                    {paymentMethod === 'virement' && (<div><label htmlFor="transfer_series" className="block text-sm font-medium text-gray-700">Série de virement</label><input type="text" name="transfer_series" id="transfer_series" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div>)}
-                    {paymentMethod === 'effet' && (<div><label htmlFor="effect_number" className="block text-sm font-medium text-gray-700">N° d'effet</label><input type="text" name="effect_number" id="effect_number" className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm" /></div>)}
-                    <div className="mt-6 flex justify-end space-x-3"><button type="button" onClick={() => setIsPaymentModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Annuler</button><button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Sauvegarder Paiement</button></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="payment_date" className="block text-sm font-bold text-gray-700">Date du paiement</label>
+                            <input type="date" name="payment_date" id="payment_date" required defaultValue={new Date().toISOString().substring(0, 10)} className="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 font-bold" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700">Méthode de paiement</label>
+                            <select onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} value={paymentMethod} className="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 font-bold">
+                                <option value="especes">Espèces</option>
+                                <option value="cheque">Chèque</option>
+                                <option value="virement">Virement</option>
+                                <option value="effet">Effet</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {paymentMethod !== 'especes' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-up-from-bottom">
+                            <div><label className="block text-xs font-bold text-gray-500 uppercase">Référence (N°)</label><input type="text" name="cheque_number" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg font-bold" /></div>
+                            <div><label className="block text-xs font-bold text-gray-500 uppercase">Banque</label><input type="text" name="bank_name" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg font-bold" /></div>
+                        </div>
+                    )}
+
+                    <div className="mt-8 flex justify-end space-x-3 pt-5 border-t border-gray-100">
+                        <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all">Annuler</button>
+                        <button type="submit" className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold shadow-lg hover:bg-green-700 transition-all">Valider l'encaissement</button>
+                    </div>
                 </form>
             </Modal>
             

@@ -10,10 +10,12 @@ import ClientsPage from './pages/ClientsPage';
 import ContractsPage from './pages/ContractsPage';
 import LoginPage from './pages/LoginPage';
 import PaymentsPage from './pages/PaymentsPage';
+import PaymentDocumentsPage from './pages/PaymentDocumentsPage';
 import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import SettingsPage from './pages/SettingsPage';
-import { useAuth } from './auth/AuthContext';
+import RejectedSalesPage from './pages/RejectedSalesPage';
+import { useAuth } from '../auth/AuthContext';
 import { seedAdminUser } from './firebase/seed';
 import SplashScreen from './components/SplashScreen';
 
@@ -46,24 +48,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
-        // Removed automatic data clearing. 
-        // Clearing is now manually triggered only by the Developer account in the Header.
-
         try {
             await seedAdminUser();
         } catch (error) {
             console.error("Failed to seed users:", error);
         }
 
-        // Start the exit animation after the initial splash animations are done
         setTimeout(() => {
             setIsExitingSplash(true);
         }, 1800); 
         
-        // Unmount the splash screen after its exit animation is complete
         setTimeout(() => {
             setIsInitializing(false);
-        }, 2600); // 1800ms delay + 800ms exit animation
+        }, 2600);
     };
     initializeApp();
   }, []);
@@ -86,7 +83,9 @@ const App: React.FC = () => {
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
             <Route path="/contrats" element={<ContractsPage />} />
+            <Route path="/rejets" element={<RejectedSalesPage />} />
             <Route path="/paiements" element={<PaymentsPage />} />
+            <Route path="/documents-paiements" element={<PaymentDocumentsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />

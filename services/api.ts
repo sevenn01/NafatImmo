@@ -7,12 +7,10 @@ import {
   ProjectStatus, ApartmentStatus, ContractStatus, PaymentStatus 
 } from '../types';
 
-// Helper to convert Firestore snapshots to objects with IDs
 const convertSnapshot = <T>(doc: firebase.firestore.DocumentSnapshot): T => {
   return { id: doc.id, ...doc.data() } as T;
 };
 
-// --- MOCK DATABASE FOR DEMO MODE ---
 let isDemo = false;
 
 interface MockDB {
@@ -37,7 +35,6 @@ export const enableDemoMode = (): User => {
     isDemo = true;
     const now = new Date().toISOString();
     
-    // Seed Demo User
     const demoUser: User = {
         id: 'demo_user', user_id: 'demo_user', name: 'Admin Démo', email: 'demo@nafat.com', role: 'admin', 
         permissions: { 
@@ -53,47 +50,33 @@ export const enableDemoMode = (): User => {
     };
 
     mockDb.users = [demoUser];
-
-    // Seed Data
     mockDb.projects = [
-        { id: 'p1', project_id: 'p1', project_name: 'Résidence Les Oliviers', location: 'Quartier Riad', description: 'Résidence moderne avec jardin.', total_apartments: 4, status: ProjectStatus.Active, created_at: now, updated_at: now }
+        { 
+            id: 'p1', project_id: 'p1', project_name: 'Résidence Les Oliviers', location: 'Quartier Riad', 
+            description: 'Résidence moderne avec jardin.', total_apartments: 6, status: ProjectStatus.Active, 
+            created_at: now, updated_at: now, num_floors: 4, has_rdc: true 
+        }
     ];
 
     mockDb.apartments = [
-        { id: 'a1', apartment_id: 'a1', project_id: 'p1', name: 'Appart. A1', type: 'apartment', floor: '1', surface_m2: 80, rooms: 3, balcony: true, bathroom: 1, kitchen: true, status: ApartmentStatus.Rented, price_dh: 4000, owner_name: 'Nafat', description: '', current_contract_id: 'c1', created_at: now, updated_at: now },
-        { id: 'a2', apartment_id: 'a2', project_id: 'p1', name: 'Appart. A2', type: 'apartment', floor: '1', surface_m2: 85, rooms: 3, balcony: true, bathroom: 2, kitchen: true, status: ApartmentStatus.Available, price_dh: 4500, owner_name: 'Nafat', description: '', created_at: now, updated_at: now },
-        { id: 'a3', apartment_id: 'a3', project_id: 'p1', name: 'Appart. A3 (Vendu)', type: 'apartment', floor: '2', surface_m2: 90, rooms: 3, balcony: true, bathroom: 2, kitchen: true, status: ApartmentStatus.Sold, price_dh: 0, sale_price_dh: 850000, owner_name: 'Nafat', description: '', current_contract_id: 'c2', created_at: now, updated_at: now },
-         { id: 'g1', apartment_id: 'g1', project_id: 'p1', name: 'Garage G1', type: 'garage', surface_m2: 15, status: ApartmentStatus.Available, price_dh: 400, owner_name: 'Nafat', description: '', created_at: now, updated_at: now }
+        { id: 'a1', apartment_id: 'a1', project_id: 'p1', name: 'Appart 101', type: 'apartment', floor: '1', surface_m2: 80, rooms: 3, balcony: true, bathroom: 1, kitchen: true, status: ApartmentStatus.Rented, price_dh: 4000, owner_name: 'Nafat', description: '', current_contract_id: 'c1', created_at: now, updated_at: now, intended_for: 'rental' }
     ];
 
     mockDb.clients = [
-        { id: 'cl1', client_id: 'cl1', full_name: 'Ahmed Benali', phone: '0661123456', email: 'ahmed@demo.com', address: 'Agadir', cin_number: 'J123456', occupation: 'Enseignant', contracts: ['c1'], created_at: now, updated_at: now },
-        { id: 'cl2', client_id: 'cl2', full_name: 'Fatima Zahra', phone: '0662987654', email: 'fatima@demo.com', address: 'Casablanca', cin_number: 'B987654', occupation: 'Médecin', contracts: ['c2'], created_at: now, updated_at: now }
+        { id: 'cl1', client_id: 'cl1', full_name: 'Ahmed Benali', phone: '0661123456', email: 'ahmed@demo.com', address: 'Agadir', cin_number: 'J123456', occupation: 'Enseignant', contracts: ['c1'], created_at: now, updated_at: now }
     ];
 
-    // Rental Contract
     mockDb.contracts = [
         { 
             id: 'c1', contract_id: 'c1', client_id: 'cl1', apartment_id: 'a1', project_id: 'p1',
             type: 'rental', amount_dh: 4000, duration_months: 12, start_date: new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString().split('T')[0],
             end_date: new Date(new Date().setMonth(new Date().getMonth() + 10)).toISOString().split('T')[0],
             status: ContractStatus.Active, notes: 'Caution reçue', created_at: now, updated_at: now, months_left: 10
-        },
-        // Sale Contract
-        {
-            id: 'c2', contract_id: 'c2', client_id: 'cl2', apartment_id: 'a3', project_id: 'p1',
-            type: 'sale', amount_dh: 850000, start_date: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
-            status: ContractStatus.SaleCompleted, notes: 'Vente finalisée', created_at: now, updated_at: now
         }
     ];
 
-    // Payments
     mockDb.payments = [
-        { id: 'p1', payment_id: 'p1', contract_id: 'c1', client_id: 'cl1', amount_dh: 4000, payment_date: new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString(), payment_for: 'Loyer Mois 1', status: PaymentStatus.Paid, payment_method: 'virement', created_at: now, updated_at: now },
-        { id: 'p2', payment_id: 'p2', contract_id: 'c1', client_id: 'cl1', amount_dh: 4000, payment_date: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(), payment_for: 'Loyer Mois 2', status: PaymentStatus.Paid, payment_method: 'virement', created_at: now, updated_at: now },
-        // Sale Payment (Partial)
-        { id: 'p3', payment_id: 'p3', contract_id: 'c2', client_id: 'cl2', amount_dh: 850000, payment_date: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(), payment_for: 'Paiement Total Vente', status: PaymentStatus.Paid, payment_method: 'cheque', cheque_number: 'CH123456', bank_name: 'BP', created_at: now, updated_at: now }
-
+        { id: 'pay1', payment_id: 'pay1', contract_id: 'c1', client_id: 'cl1', amount_dh: 4000, payment_date: new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString(), payment_for: 'Loyer Janvier 2024', status: PaymentStatus.Paid, payment_method: 'virement', created_at: now, updated_at: now }
     ];
 
     return demoUser;
@@ -101,147 +84,82 @@ export const enableDemoMode = (): User => {
 
 export const disableDemoMode = () => {
     isDemo = false;
-    mockDb = {
-        users: [],
-        projects: [],
-        apartments: [],
-        clients: [],
-        contracts: [],
-        payments: []
-    };
+    mockDb = { users: [], projects: [], apartments: [], clients: [], contracts: [], payments: [] };
 };
 
-// --- Helper for Mock ---
 const generateId = () => Math.random().toString(36).substr(2, 9);
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// --- Auth ---
 export const login = async (email: string, password: string): Promise<User> => {
-    // If login is attempted with credentials, force disable demo mode to use real backend
-    if (isDemo) {
-        disableDemoMode();
-    }
-
-    const usersRef = db.collection('users');
-    const cleanEmail = email.trim();
-    
-    const snapshot = await usersRef.where('email', '==', cleanEmail).get();
-
-    if (snapshot.empty) {
-        throw new Error("Utilisateur non trouvé.");
-    }
-
-    const userDoc = snapshot.docs[0];
-    const userData = convertSnapshot<User>(userDoc);
-    
-    if (userData.password && userData.password !== password) {
-        throw new Error("Mot de passe incorrect.");
-    }
-    
-    await userDoc.ref.update({
-        last_login: new Date().toISOString()
-    });
-
+    if (isDemo) disableDemoMode();
+    const snapshot = await db.collection('users').where('email', '==', email.trim()).get();
+    if (snapshot.empty) throw new Error("Utilisateur non trouvé.");
+    const userData = convertSnapshot<User>(snapshot.docs[0]);
+    if (userData.password && userData.password !== password) throw new Error("Mot de passe incorrect.");
+    await snapshot.docs[0].ref.update({ last_login: new Date().toISOString() });
     return userData;
 };
 
-// --- User Management ---
 export const getUsers = async (): Promise<User[]> => {
-    if (isDemo) { await delay(200); return [...mockDb.users]; }
+    if (isDemo) { await delay(100); return [...mockDb.users]; }
     const snapshot = await db.collection('users').get();
     return snapshot.docs.map(doc => convertSnapshot<User>(doc));
 };
 
 export const addUser = async (userData: Partial<User>) => {
     if (isDemo) {
-        const newUser = { ...userData, id: generateId(), user_id: generateId(), created_at: new Date().toISOString() } as User;
-        mockDb.users.push(newUser);
+        mockDb.users.push({ ...userData, id: generateId(), user_id: generateId(), created_at: new Date().toISOString() } as User);
         return;
     }
-    const newUserRef = db.collection('users').doc();
-    await newUserRef.set({
-        ...userData,
-        email: userData.email?.trim(),
-        user_id: newUserRef.id,
-        created_at: new Date().toISOString(),
-        last_login: new Date().toISOString(),
-        avatar_url: userData.avatar_url || ''
-    });
+    await db.collection('users').add({ ...userData, created_at: new Date().toISOString(), last_login: new Date().toISOString() });
 };
 
 export const updateUser = async (userId: string, data: Partial<User>) => {
     if (isDemo) {
-        const index = mockDb.users.findIndex(u => u.id === userId);
-        if (index !== -1) mockDb.users[index] = { ...mockDb.users[index], ...data };
+        const idx = mockDb.users.findIndex(u => u.id === userId);
+        if (idx !== -1) mockDb.users[idx] = { ...mockDb.users[idx], ...data };
         return;
     }
-    const cleanData = { ...data };
-    if (cleanData.email) cleanData.email = cleanData.email.trim();
-    await db.collection('users').doc(userId).update(cleanData);
+    await db.collection('users').doc(userId).update(data);
 };
 
 export const deleteUser = async (userId: string) => {
-    if (isDemo) {
-        mockDb.users = mockDb.users.filter(u => u.id !== userId);
-        return;
-    }
+    if (isDemo) { mockDb.users = mockDb.users.filter(u => u.id !== userId); return; }
     await db.collection('users').doc(userId).delete();
 };
 
-
-// --- System ---
 export const clearDatabase = async () => {
-    if (isDemo) {
-        disableDemoMode();
-        // Re-seed demo user so we don't crash
-        enableDemoMode(); 
-        return;
-    }
+    if (isDemo) { disableDemoMode(); enableDemoMode(); return; }
     const collections = ['projects', 'apartments', 'clients', 'contracts', 'payments'];
-    for (const collectionName of collections) {
-        const snapshot = await db.collection(collectionName).get();
-        if (snapshot.empty) continue;
+    for (const name of collections) {
+        const snap = await db.collection(name).get();
         const batch = db.batch();
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
+        snap.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
     }
 };
 
-// --- Projects ---
 export const getProjects = async (): Promise<Project[]> => {
-  if (isDemo) { await delay(200); return [...mockDb.projects]; }
+  if (isDemo) { await delay(100); return [...mockDb.projects]; }
   const snapshot = await db.collection('projects').get();
   return snapshot.docs.map(doc => convertSnapshot<Project>(doc));
 };
 
 export const addProject = async (project: Partial<Project>, userId: string) => {
   if (isDemo) {
-      const newProject = { ...project, id: generateId(), project_id: generateId(), created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Project;
-      mockDb.projects.push(newProject);
+      mockDb.projects.push({ ...project, id: generateId(), project_id: generateId(), created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId, num_floors: project.num_floors || 0, has_rdc: project.has_rdc ?? true } as Project);
       return;
   }
-  await db.collection('projects').add({
-    ...project,
-    created_by: userId,
-    updated_by: userId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('projects').add({ ...project, created_by: userId, updated_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
 };
 
 export const updateProject = async (projectId: string, data: Partial<Project>, userId: string) => {
   if (isDemo) {
-      const index = mockDb.projects.findIndex(p => p.id === projectId);
-      if (index !== -1) mockDb.projects[index] = { ...mockDb.projects[index], ...data, updated_at: new Date().toISOString() };
+      const idx = mockDb.projects.findIndex(p => p.id === projectId);
+      if (idx !== -1) mockDb.projects[idx] = { ...mockDb.projects[idx], ...data, updated_at: new Date().toISOString() };
       return;
   }
-  await db.collection('projects').doc(projectId).update({
-    ...data,
-    updated_by: userId,
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('projects').doc(projectId).update({ ...data, updated_by: userId, updated_at: new Date().toISOString() });
 };
 
 export const deleteProject = async (projectId: string) => {
@@ -251,122 +169,85 @@ export const deleteProject = async (projectId: string) => {
         return;
     }
     const batch = db.batch();
-    const projectRef = db.collection('projects').doc(projectId);
-    batch.delete(projectRef);
-    
+    batch.delete(db.collection('projects').doc(projectId));
     const apts = await db.collection('apartments').where('project_id', '==', projectId).get();
     apts.forEach(doc => batch.delete(doc.ref));
-
     await batch.commit();
 };
 
-// --- Apartments ---
 export const getApartments = async (): Promise<Apartment[]> => {
-  if (isDemo) { await delay(200); return [...mockDb.apartments]; }
+  if (isDemo) { await delay(100); return [...mockDb.apartments]; }
   const snapshot = await db.collection('apartments').get();
   return snapshot.docs.map(doc => convertSnapshot<Apartment>(doc));
 };
 
 export const addApartment = async (apartment: Partial<Apartment>, userId: string) => {
+  const status = apartment.intended_for === 'rental' ? ApartmentStatus.Available : ApartmentStatus.ForSale;
   if (isDemo) {
-      const newApt = { ...apartment, id: generateId(), apartment_id: generateId(), status: ApartmentStatus.Available, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Apartment;
-      mockDb.apartments.push(newApt);
+      mockDb.apartments.push({ ...apartment, id: generateId(), apartment_id: generateId(), status, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Apartment);
       return;
   }
-  await db.collection('apartments').add({
-    ...apartment,
-    status: ApartmentStatus.Available, // Default status
-    created_by: userId,
-    updated_by: userId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('apartments').add({ ...apartment, status, created_by: userId, updated_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
 };
 
 export const updateApartment = async (apartmentId: string, data: Partial<Apartment>, userId: string) => {
   if (isDemo) {
-      const index = mockDb.apartments.findIndex(a => a.id === apartmentId);
-      if (index !== -1) mockDb.apartments[index] = { ...mockDb.apartments[index], ...data, updated_at: new Date().toISOString() };
+      const idx = mockDb.apartments.findIndex(a => a.id === apartmentId);
+      if (idx !== -1) mockDb.apartments[idx] = { ...mockDb.apartments[idx], ...data, updated_at: new Date().toISOString() };
       return;
   }
-  await db.collection('apartments').doc(apartmentId).update({
-    ...data,
-    updated_by: userId,
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('apartments').doc(apartmentId).update({ ...data, updated_by: userId, updated_at: new Date().toISOString() });
 };
 
 export const deleteApartment = async (apartment: Apartment) => {
     if (isDemo) {
-        const hasContracts = mockDb.contracts.some(c => c.apartment_id === apartment.id);
-        if (hasContracts) throw new Error("Impossible de supprimer cette propriété car elle a un historique de contrats.");
+        const hasHistory = mockDb.contracts.some(c => c.apartment_id === apartment.id);
+        if (hasHistory) throw new Error("Impossible de supprimer car historique de contrats existant.");
         mockDb.apartments = mockDb.apartments.filter(a => a.id !== apartment.id);
         return;
     }
-    const contractsQuery = await db.collection("contracts").where("apartment_id", "==", apartment.id).get();
-    
-    if (!contractsQuery.empty) {
-        throw new Error("Impossible de supprimer cette propriété car elle a un historique de contrats (actifs ou terminés). Veuillez d'abord supprimer ou archiver les contrats associés.");
-    }
-    
+    const snap = await db.collection("contracts").where("apartment_id", "==", apartment.id).get();
+    if (!snap.empty) throw new Error("Impossible de supprimer car historique de contrats existant.");
     await db.collection('apartments').doc(apartment.id).delete();
 };
 
-// --- Clients ---
 export const getClients = async (): Promise<Client[]> => {
-  if (isDemo) { await delay(200); return [...mockDb.clients]; }
+  if (isDemo) { await delay(100); return [...mockDb.clients]; }
   const snapshot = await db.collection('clients').get();
   return snapshot.docs.map(doc => convertSnapshot<Client>(doc));
 };
 
 export const addClient = async (client: Partial<Client>, userId: string) => {
   if (isDemo) {
-      const newClient = { ...client, id: generateId(), client_id: generateId(), contracts: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Client;
-      mockDb.clients.push(newClient);
+      mockDb.clients.push({ ...client, id: generateId(), client_id: generateId(), contracts: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Client);
       return;
   }
-  await db.collection('clients').add({
-    ...client,
-    contracts: [],
-    created_by: userId,
-    updated_by: userId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
-};
-
-export const updateClient = async (clientId: string, data: Partial<Client>, userId: string) => {
-  if (isDemo) {
-      const index = mockDb.clients.findIndex(c => c.id === clientId);
-      if (index !== -1) mockDb.clients[index] = { ...mockDb.clients[index], ...data, updated_at: new Date().toISOString() };
-      return;
-  }
-  await db.collection('clients').doc(clientId).update({
-    ...data,
-    updated_by: userId,
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('clients').add({ ...client, contracts: [], created_by: userId, updated_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
 };
 
 export const deleteClient = async (clientId: string) => {
     if (isDemo) {
-        const activeContracts = mockDb.contracts.some(c => c.client_id === clientId && c.status === ContractStatus.Active);
-        if (activeContracts) throw new Error("Impossible de supprimer un client avec des contrats actifs.");
+        const hasHistory = mockDb.contracts.some(c => c.client_id === clientId);
+        if (hasHistory) throw new Error("Client avec historique de contrats existant.");
         mockDb.clients = mockDb.clients.filter(c => c.id !== clientId);
         return;
     }
-    const contractsQuery = db.collection("contracts").where("client_id", "==", clientId).where("status", "==", ContractStatus.Active);
-    const activeContractsSnapshot = await contractsQuery.get();
-    if (!activeContractsSnapshot.empty) {
-        throw new Error("Impossible de supprimer un client avec des contrats actifs.");
-    }
-    const clientRef = db.collection("clients").doc(clientId);
-    await clientRef.delete();
+    const snap = await db.collection("contracts").where("client_id", "==", clientId).get();
+    if (!snap.empty) throw new Error("Client avec historique de contrats existant.");
+    await db.collection("clients").doc(clientId).delete();
 };
 
-// --- Contracts ---
+export const updateClient = async (clientId: string, data: Partial<Client>, userId: string) => {
+  if (isDemo) {
+      const idx = mockDb.clients.findIndex(c => c.id === clientId);
+      if (idx !== -1) mockDb.clients[idx] = { ...mockDb.clients[idx], ...data, updated_at: new Date().toISOString() };
+      return;
+  }
+  await db.collection('clients').doc(clientId).update({ ...data, updated_by: userId, updated_at: new Date().toISOString() });
+};
+
 export const getContracts = async (): Promise<Contract[]> => {
-  if (isDemo) { await delay(200); return [...mockDb.contracts]; }
+  if (isDemo) { await delay(100); return [...mockDb.contracts]; }
   const snapshot = await db.collection('contracts').get();
   return snapshot.docs.map(doc => convertSnapshot<Contract>(doc));
 };
@@ -377,485 +258,263 @@ export const addContract = async (
     initialPaymentData?: Partial<Payment>
 ) => {
     if (isDemo) {
-        const newContractId = generateId();
-        const newContract = { ...contractData, id: newContractId, contract_id: newContractId, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Contract;
-        mockDb.contracts.push(newContract);
-        
-        // Update Apartment
-        const aptIndex = mockDb.apartments.findIndex(a => a.id === contractData.apartment_id);
-        if (aptIndex !== -1) {
-            mockDb.apartments[aptIndex].status = contractData.type === 'rental' ? ApartmentStatus.Rented : ApartmentStatus.Sold;
-            mockDb.apartments[aptIndex].current_contract_id = newContractId;
+        const newId = generateId();
+        let status = contractData.type === 'sale' ? ContractStatus.SaleInProgress : ContractStatus.Active;
+        if (initialPaymentData && contractData.type === 'sale' && initialPaymentData.amount_dh! >= (contractData.amount_dh || 0)) {
+            status = ContractStatus.SaleCompleted;
         }
-
-        // Update Client
-        const clientIndex = mockDb.clients.findIndex(c => c.id === contractData.client_id);
-        if (clientIndex !== -1) {
-            mockDb.clients[clientIndex].contracts = [...(mockDb.clients[clientIndex].contracts || []), newContractId];
+        mockDb.contracts.push({ ...contractData, id: newId, contract_id: newId, status, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Contract);
+        const aptIdx = mockDb.apartments.findIndex(a => a.id === contractData.apartment_id);
+        if (aptIdx !== -1) { 
+            mockDb.apartments[aptIdx].status = contractData.type === 'rental' ? ApartmentStatus.Rented : ApartmentStatus.Sold; 
+            mockDb.apartments[aptIdx].current_contract_id = newId; 
         }
-
-        // Initial Payment
         if (initialPaymentData) {
-            const newPayment = { ...initialPaymentData, id: generateId(), payment_id: generateId(), contract_id: newContractId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as Payment;
-            mockDb.payments.push(newPayment);
+            mockDb.payments.push({ ...initialPaymentData, id: generateId(), payment_id: generateId(), contract_id: newId, client_id: contractData.client_id, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Payment);
         }
         return;
     }
-
     const batch = db.batch();
-    
-    // Create Contract Ref
     const contractRef = db.collection('contracts').doc();
-    const contractId = contractRef.id;
-
-    const newContract = {
-        ...contractData,
-        contract_id: contractId,
-        created_by: userId,
-        updated_by: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    };
-
-    batch.set(contractRef, newContract);
-
-    // Update Apartment Status
-    const apartmentRef = db.collection('apartments').doc(contractData.apartment_id!);
-    const newAptStatus = contractData.type === 'rental' ? ApartmentStatus.Rented : ApartmentStatus.Sold;
-    
-    batch.update(apartmentRef, {
-        status: newAptStatus,
-        current_contract_id: contractId,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
-
-    // Update Client's contract list
-    const clientRef = db.collection('clients').doc(contractData.client_id!);
-    batch.update(clientRef, {
-        contracts: firebase.firestore.FieldValue.arrayUnion(contractId),
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
-
-    // Handle initial payment if exists (for sales)
-    if (initialPaymentData) {
-        const paymentRef = db.collection('payments').doc();
-        batch.set(paymentRef, {
-            ...initialPaymentData,
-            contract_id: contractId,
-            client_id: contractData.client_id,
-            payment_id: paymentRef.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: userId,
-        });
+    let status = contractData.type === 'sale' ? ContractStatus.SaleInProgress : ContractStatus.Active;
+    if (initialPaymentData && contractData.type === 'sale' && initialPaymentData.amount_dh! >= contractData.amount_dh!) {
+        status = ContractStatus.SaleCompleted;
     }
-
+    batch.set(contractRef, { ...contractData, contract_id: contractRef.id, status, created_by: userId, updated_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    batch.update(db.collection('apartments').doc(contractData.apartment_id!), { status: contractData.type === 'rental' ? ApartmentStatus.Rented : ApartmentStatus.Sold, current_contract_id: contractRef.id });
+    batch.update(db.collection('clients').doc(contractData.client_id!), { contracts: firebase.firestore.FieldValue.arrayUnion(contractRef.id) });
+    if (initialPaymentData) {
+        const payRef = db.collection('payments').doc();
+        batch.set(payRef, { ...initialPaymentData, contract_id: contractRef.id, client_id: contractData.client_id, payment_id: payRef.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId });
+    }
     await batch.commit();
 };
 
 export const updateContract = async (contractId: string, data: Partial<Contract>, userId: string) => {
   if (isDemo) {
-      const index = mockDb.contracts.findIndex(c => c.id === contractId);
-      if (index !== -1) mockDb.contracts[index] = { ...mockDb.contracts[index], ...data, updated_at: new Date().toISOString() };
+      const idx = mockDb.contracts.findIndex(c => c.id === contractId);
+      if (idx !== -1) mockDb.contracts[idx] = { ...mockDb.contracts[idx], ...data, updated_at: new Date().toISOString() };
       return;
   }
-  await db.collection('contracts').doc(contractId).update({
-    ...data,
-    updated_by: userId,
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('contracts').doc(contractId).update({ ...data, updated_by: userId, updated_at: new Date().toISOString() });
 };
 
-export const cancelContract = async (contract: Contract, userId: string) => {
+export const cancelContract = async (contract: Contract, userId: string, reason?: string) => {
     if (isDemo) {
-        const index = mockDb.contracts.findIndex(c => c.id === contract.id);
-        if (index !== -1) {
-            mockDb.contracts[index].status = contract.type === 'sale' ? ContractStatus.SaleCanceled : ContractStatus.Canceled;
+        const idx = mockDb.contracts.findIndex(c => c.id === contract.id);
+        if (idx !== -1) {
+            mockDb.contracts[idx].status = contract.type === 'sale' ? ContractStatus.SaleCanceled : ContractStatus.Canceled;
+            mockDb.contracts[idx].rejection_reason = reason;
         }
-        const aptIndex = mockDb.apartments.findIndex(a => a.id === contract.apartment_id);
-        if (aptIndex !== -1) {
-            mockDb.apartments[aptIndex].status = contract.type === 'sale' ? ApartmentStatus.ForSale : ApartmentStatus.Available;
-            mockDb.apartments[aptIndex].current_contract_id = "";
+        const aptIdx = mockDb.apartments.findIndex(a => a.id === contract.apartment_id);
+        if (aptIdx !== -1) { 
+            const apt = mockDb.apartments[aptIdx];
+            apt.status = apt.intended_for === 'sale' ? ApartmentStatus.ForSale : ApartmentStatus.Available; 
+            apt.current_contract_id = ""; 
+        }
+        const clIdx = mockDb.clients.findIndex(c => c.id === contract.client_id);
+        if (clIdx !== -1) {
+            mockDb.clients[clIdx].has_rejection = true;
+            mockDb.clients[clIdx].rejection_count = (mockDb.clients[clIdx].rejection_count || 0) + 1;
         }
         return;
     }
     const batch = db.batch();
-    const contractRef = db.collection('contracts').doc(contract.id);
-    batch.update(contractRef, {
-        status: contract.type === 'sale' ? ContractStatus.SaleCanceled : ContractStatus.Canceled,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
+    const newStatus = contract.type === 'sale' ? ContractStatus.SaleCanceled : ContractStatus.Canceled;
+    batch.update(db.collection('contracts').doc(contract.id), { 
+        status: newStatus,
+        rejection_reason: reason || 'Non spécifié',
+        updated_at: new Date().toISOString()
     });
-    const apartmentRef = db.collection('apartments').doc(contract.apartment_id);
-    const newAptStatus = contract.type === 'sale' ? ApartmentStatus.ForSale : ApartmentStatus.Available;
-    batch.update(apartmentRef, {
-        status: newAptStatus,
-        current_contract_id: "",
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
+    
+    // Close recovery by canceling all pending payments
+    const pendingPays = await db.collection('payments').where('contract_id', '==', contract.id).where('status', '==', PaymentStatus.Pending).get();
+    pendingPays.forEach(p => batch.update(p.ref, { status: PaymentStatus.Canceled }));
+
+    const aptSnap = await db.collection('apartments').doc(contract.apartment_id).get();
+    const aptData = aptSnap.data() as Apartment;
+    const restoredStatus = aptData.intended_for === 'rental' ? ApartmentStatus.Available : ApartmentStatus.ForSale;
+    
+    batch.update(db.collection('apartments').doc(contract.apartment_id), { status: restoredStatus, current_contract_id: "" });
+    
+    const clientRef = db.collection('clients').doc(contract.client_id);
+    const clientSnap = await clientRef.get();
+    const clientData = clientSnap.data() as Client;
+    batch.update(clientRef, { 
+        has_rejection: true, 
+        rejection_count: (clientData.rejection_count || 0) + 1 
     });
+    
     await batch.commit();
 };
 
 export const endContract = async (contract: Contract, userId: string) => {
     if (isDemo) {
-        const today = new Date();
-        const startDate = new Date(contract.start_date);
-        let durationMonths = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
-        if (today.getDate() > startDate.getDate()) durationMonths += 1;
-        durationMonths = Math.max(1, durationMonths);
-
-        const index = mockDb.contracts.findIndex(c => c.id === contract.id);
-        if (index !== -1) {
-            mockDb.contracts[index] = { 
-                ...mockDb.contracts[index], 
-                status: ContractStatus.Ended, months_left: 0, end_date: today.toISOString().split('T')[0], duration_months: durationMonths 
-            };
-        }
-        const aptIndex = mockDb.apartments.findIndex(a => a.id === contract.apartment_id);
-        if (aptIndex !== -1) {
-            mockDb.apartments[aptIndex].status = ApartmentStatus.Available;
-            mockDb.apartments[aptIndex].current_contract_id = "";
-        }
+        const idx = mockDb.contracts.findIndex(c => c.id === contract.id);
+        if (idx !== -1) mockDb.contracts[idx].status = ContractStatus.Ended;
+        const aptIdx = mockDb.apartments.findIndex(a => a.id === contract.apartment_id);
+        if (aptIdx !== -1) { mockDb.apartments[aptIdx].status = ApartmentStatus.Available; mockDb.apartments[aptIdx].current_contract_id = ""; }
         return;
     }
-
     const batch = db.batch();
-    const today = new Date();
-    const startDate = new Date(contract.start_date);
-    let durationMonths = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
-    if (today.getDate() > startDate.getDate()) durationMonths += 1;
-    durationMonths = Math.max(1, durationMonths);
-
-    const contractRef = db.collection('contracts').doc(contract.id);
-    batch.update(contractRef, {
-        status: ContractStatus.Ended,
-        months_left: 0,
-        end_date: today.toISOString().split('T')[0],
-        duration_months: durationMonths,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
-
-    const apartmentRef = db.collection('apartments').doc(contract.apartment_id);
-    batch.update(apartmentRef, {
-        status: ApartmentStatus.Available,
-        current_contract_id: "",
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
+    batch.update(db.collection('contracts').doc(contract.id), { status: ContractStatus.Ended });
+    batch.update(db.collection('apartments').doc(contract.apartment_id), { status: ApartmentStatus.Available, current_contract_id: "" });
     await batch.commit();
 };
 
 export const renewContract = async (oldContract: Contract, newContractData: Partial<Contract>, userId: string) => {
     if (isDemo) {
-        const oldIndex = mockDb.contracts.findIndex(c => c.id === oldContract.id);
-        if (oldIndex !== -1) {
-            mockDb.contracts[oldIndex].status = ContractStatus.Renewed;
+        const oldIdx = mockDb.contracts.findIndex(c => c.id === oldContract.id);
+        if (oldIdx !== -1) mockDb.contracts[oldIdx].status = ContractStatus.Renewed;
+        const newId = generateId();
+        mockDb.contracts.push({ ...newContractData, id: newId, contract_id: newId, previous_contract_id: oldContract.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Contract);
+        const aptIdx = mockDb.apartments.findIndex(a => a.id === oldContract.apartment_id);
+        if (aptIdx !== -1) {
+            mockDb.apartments[aptIdx].current_contract_id = newId;
         }
-        
-        const newContractId = generateId();
-        const newContract = { 
-            ...newContractData, id: newContractId, contract_id: newContractId, previous_contract_id: oldContract.id,
-            created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId
-        } as Contract;
-        mockDb.contracts.push(newContract);
-
-        const aptIndex = mockDb.apartments.findIndex(a => a.id === oldContract.apartment_id);
-        if (aptIndex !== -1) mockDb.apartments[aptIndex].current_contract_id = newContractId;
-
-        const clientIndex = mockDb.clients.findIndex(c => c.id === oldContract.client_id);
-        if (clientIndex !== -1) mockDb.clients[clientIndex].contracts.push(newContractId);
-
-        if (oldIndex !== -1) mockDb.contracts[oldIndex].renewed_contract_id = newContractId;
         return;
     }
-
     const batch = db.batch();
-    const oldContractRef = db.collection('contracts').doc(oldContract.id);
-    batch.update(oldContractRef, {
-        status: ContractStatus.Renewed,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
-
-    const newContractRef = db.collection('contracts').doc();
-    const newContractId = newContractRef.id;
-    
-    batch.set(newContractRef, {
-        ...newContractData,
-        contract_id: newContractId,
-        previous_contract_id: oldContract.id,
-        created_by: userId,
-        updated_by: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    });
-
-    const apartmentRef = db.collection('apartments').doc(oldContract.apartment_id);
-    batch.update(apartmentRef, {
-        current_contract_id: newContractId,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
-    
-    const clientRef = db.collection('clients').doc(oldContract.client_id);
-    batch.update(clientRef, {
-        contracts: firebase.firestore.FieldValue.arrayUnion(newContractId),
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
-
-    batch.update(oldContractRef, {
-        renewed_contract_id: newContractId
-    });
-
+    batch.update(db.collection('contracts').doc(oldContract.id), { status: ContractStatus.Renewed });
+    const newRef = db.collection('contracts').doc();
+    batch.set(newRef, { ...newContractData, contract_id: newRef.id, previous_contract_id: oldContract.id, created_by: userId, created_at: new Date().toISOString() });
+    batch.update(db.collection('apartments').doc(oldContract.apartment_id), { current_contract_id: newRef.id });
     await batch.commit();
 };
 
 export const deleteContract = async (contractId: string) => {
     if (isDemo) {
         mockDb.payments = mockDb.payments.filter(p => p.contract_id !== contractId);
-        
-        const contract = mockDb.contracts.find(c => c.id === contractId);
-        if (contract) {
-            const clientIndex = mockDb.clients.findIndex(c => c.id === contract.client_id);
-            if (clientIndex !== -1) {
-                mockDb.clients[clientIndex].contracts = mockDb.clients[clientIndex].contracts.filter(id => id !== contractId);
-            }
-            const aptIndex = mockDb.apartments.findIndex(a => a.id === contract.apartment_id);
-            if (aptIndex !== -1 && mockDb.apartments[aptIndex].current_contract_id === contractId) {
-                mockDb.apartments[aptIndex].current_contract_id = "";
-                mockDb.apartments[aptIndex].status = mockDb.apartments[aptIndex].sale_price_dh ? ApartmentStatus.ForSale : ApartmentStatus.Available;
+        const c = mockDb.contracts.find(c => c.id === contractId);
+        if (c) {
+            const aptIdx = mockDb.apartments.findIndex(a => a.id === c.apartment_id);
+            if (aptIdx !== -1) {
+                mockDb.apartments[aptIdx].current_contract_id = "";
+                mockDb.apartments[aptIdx].status = ApartmentStatus.Available;
             }
         }
         mockDb.contracts = mockDb.contracts.filter(c => c.id !== contractId);
         return;
     }
-
-    const paymentsQuery = await db.collection("payments").where("contract_id", "==", contractId).get();
     const batch = db.batch();
-    paymentsQuery.forEach(doc => batch.delete(doc.ref));
+    const pays = await db.collection("payments").where("contract_id", "==", contractId).get();
+    pays.forEach(d => batch.delete(d.ref));
+    const cSnap = await db.collection("contracts").doc(contractId).get();
+    if (cSnap.exists) {
+        const data = cSnap.data() as Contract;
+        batch.update(db.collection("apartments").doc(data.apartment_id), { current_contract_id: "", status: ApartmentStatus.Available });
+    }
+    batch.delete(db.collection("contracts").doc(contractId));
     await batch.commit();
-
-    await db.runTransaction(async (transaction) => {
-        const contractRef = db.collection("contracts").doc(contractId);
-        const contractDoc = await transaction.get(contractRef);
-        
-        if (!contractDoc.exists) {
-            throw new Error("Contrat introuvable.");
-        }
-        
-        const contractData = contractDoc.data() as Contract;
-        const clientRef = db.collection("clients").doc(contractData.client_id);
-        const apartmentRef = db.collection("apartments").doc(contractData.apartment_id);
-
-        const clientDoc = await transaction.get(clientRef);
-        const apartmentDoc = await transaction.get(apartmentRef);
-        
-        if (clientDoc.exists) {
-            const clientData = clientDoc.data() as Client;
-            const newContracts = (clientData.contracts || []).filter(c => c !== contractId);
-            transaction.update(clientRef, { contracts: newContracts });
-        }
-        
-        if (apartmentDoc.exists) {
-            const aptData = apartmentDoc.data() as Apartment;
-            if (aptData.current_contract_id === contractId) {
-                const newStatus = aptData.sale_price_dh ? ApartmentStatus.ForSale : ApartmentStatus.Available;
-                transaction.update(apartmentRef, { 
-                    current_contract_id: "",
-                    status: newStatus
-                });
-            }
-        }
-        
-        transaction.delete(contractRef);
-    });
 };
 
 export const getExpiringContracts = async (): Promise<Contract[]> => {
-    if (isDemo) {
-        const today = new Date();
-        const sixtyDaysFromNow = new Date();
-        sixtyDaysFromNow.setDate(today.getDate() + 60);
-        return mockDb.contracts.filter(c => {
-             if (c.status !== ContractStatus.Active || c.type !== 'rental') return false;
-             if (!c.end_date) return false;
-             const endDate = new Date(c.end_date);
-             return endDate <= sixtyDaysFromNow;
-        });
-    }
-
-    const snapshot = await db.collection('contracts')
-        .where('status', '==', ContractStatus.Active)
-        .where('type', '==', 'rental')
-        .get();
-    
-    const contracts = snapshot.docs.map(doc => convertSnapshot<Contract>(doc));
-    const today = new Date();
-    const sixtyDaysFromNow = new Date();
-    sixtyDaysFromNow.setDate(today.getDate() + 60);
-
-    return contracts.filter(c => {
-        if (!c.end_date) return false;
-        const endDate = new Date(c.end_date);
-        return endDate <= sixtyDaysFromNow;
-    });
+    const limit = new Date(); limit.setDate(limit.getDate() + 60);
+    if (isDemo) return mockDb.contracts.filter(c => c.status === ContractStatus.Active && c.end_date && new Date(c.end_date) <= limit);
+    const snap = await db.collection('contracts').where('status', '==', ContractStatus.Active).where('type', '==', 'rental').get();
+    return snap.docs.map(doc => convertSnapshot<Contract>(doc)).filter(c => c.end_date && new Date(c.end_date) <= limit);
 };
 
-export const syncContractsAndApartments = async (userId: string) => {
-    // For demo, no-op or simple logic if needed
-    if (isDemo) return;
+export const syncContractsAndApartments = async (userId: string) => {};
 
-    const contracts = await getContracts();
-    const today = new Date().toISOString().split('T')[0];
-    
-    const batch = db.batch();
-    let hasUpdates = false;
-
-    contracts.forEach(contract => {
-        if (contract.type === 'rental' && contract.status === ContractStatus.Active && contract.end_date && contract.end_date < today) {
-           // check expiry
-        }
-    });
-
-    if (hasUpdates) {
-        await batch.commit();
-    }
-};
-
-// --- Payments ---
 export const getPayments = async (): Promise<Payment[]> => {
-  if (isDemo) { await delay(200); return [...mockDb.payments]; }
+  if (isDemo) { await delay(100); return [...mockDb.payments]; }
   const snapshot = await db.collection('payments').get();
   return snapshot.docs.map(doc => convertSnapshot<Payment>(doc));
 };
 
 export const addPayment = async (payment: Partial<Payment>, userId: string) => {
   if (isDemo) {
-      const newPayment = { ...payment, id: generateId(), payment_id: generateId(), created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Payment;
-      mockDb.payments.push(newPayment);
+      const newPay = { ...payment, id: generateId(), payment_id: generateId(), created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: userId } as Payment;
+      mockDb.payments.push(newPay);
+      const contract = mockDb.contracts.find(c => c.id === payment.contract_id);
+      if (contract?.type === 'sale') {
+          const total = mockDb.payments.filter(p => p.contract_id === contract.id && p.status === PaymentStatus.Paid).reduce((sum, p) => sum + p.amount_dh, 0);
+          if (total >= contract.amount_dh) contract.status = ContractStatus.SaleCompleted;
+      }
       return;
   }
-  await db.collection('payments').add({
-    ...payment,
-    created_by: userId,
-    updated_by: userId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  await db.collection('payments').add({ ...payment, created_by: userId, updated_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+  const cSnap = await db.collection('contracts').doc(payment.contract_id!).get();
+  if (cSnap.exists) {
+      const c = cSnap.data() as Contract;
+      if (c.type === 'sale') {
+          const pays = await db.collection('payments').where('contract_id', '==', c.id).where('status', '==', PaymentStatus.Paid).get();
+          const total = pays.docs.reduce((sum, d) => sum + (d.data().amount_dh || 0), 0);
+          if (total >= c.amount_dh) await cSnap.ref.update({ status: ContractStatus.SaleCompleted });
+      }
+  }
+};
+
+export const updatePayment = async (paymentId: string, data: Partial<Payment>) => {
+    if (isDemo) {
+        const idx = mockDb.payments.findIndex(p => p.id === paymentId);
+        if (idx !== -1) mockDb.payments[idx] = { ...mockDb.payments[idx], ...data, updated_at: new Date().toISOString() };
+        return;
+    }
+    await db.collection('payments').doc(paymentId).update({ ...data, updated_at: new Date().toISOString() });
 };
 
 export const cancelPayment = async (paymentId: string, userId: string) => {
     if (isDemo) {
-        const index = mockDb.payments.findIndex(p => p.id === paymentId);
-        if (index !== -1) mockDb.payments[index].status = PaymentStatus.Canceled;
+        const idx = mockDb.payments.findIndex(p => p.id === paymentId);
+        if (idx !== -1) mockDb.payments[idx].status = PaymentStatus.Canceled;
         return;
     }
-    await db.collection('payments').doc(paymentId).update({
-        status: PaymentStatus.Canceled,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
+    await db.collection('payments').doc(paymentId).update({ status: PaymentStatus.Canceled });
 };
 
 export const markPaymentAsLate = async (paymentId: string, userId: string) => {
     if (isDemo) {
-        const index = mockDb.payments.findIndex(p => p.id === paymentId);
-        if (index !== -1) mockDb.payments[index].status = PaymentStatus.Late;
+        const idx = mockDb.payments.findIndex(p => p.id === paymentId);
+        if (idx !== -1) mockDb.payments[idx].status = PaymentStatus.Late;
         return;
     }
-    await db.collection('payments').doc(paymentId).update({
-        status: PaymentStatus.Late,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-    });
+    await db.collection('payments').doc(paymentId).update({ status: PaymentStatus.Late });
 };
 
 export const getReceiptData = async (paymentId: string): Promise<ReceiptData> => {
     if (isDemo) {
         const payment = mockDb.payments.find(p => p.id === paymentId);
-        if (!payment) throw new Error("Paiement non trouvé");
-        const client = mockDb.clients.find(c => c.id === payment.client_id);
-        const contract = mockDb.contracts.find(c => c.id === payment.contract_id);
-        if (!contract) throw new Error("Contrat non trouvé");
-        const apartment = mockDb.apartments.find(a => a.id === contract.apartment_id);
-        const project = mockDb.projects.find(p => p.id === contract.project_id);
-
-        if (!client || !apartment || !project) throw new Error("Données associées manquantes (Client, Appartement ou Projet)");
-        
-        return { payment, client, contract, apartment, project };
+        const contract = mockDb.contracts.find(c => c.id === payment?.contract_id);
+        const client = mockDb.clients.find(c => c.id === payment?.client_id);
+        const apartment = mockDb.apartments.find(a => a.id === contract?.apartment_id);
+        const project = mockDb.projects.find(p => p.id === contract?.project_id);
+        const allContractPayments = mockDb.payments.filter(p => p.contract_id === contract?.id && p.status === PaymentStatus.Paid);
+        if (!payment || !client || !contract || !apartment || !project) throw new Error("Missing data");
+        return { payment, client, contract, apartment, project, allContractPayments };
     }
-
-    const paymentSnap = await db.collection("payments").doc(paymentId).get();
-    if (!paymentSnap.exists) throw new Error("Paiement non trouvé");
-    const payment = convertSnapshot<Payment>(paymentSnap);
-
-    const clientSnap = await db.collection("clients").doc(payment.client_id).get();
-    const client = convertSnapshot<Client>(clientSnap);
-
-    const contractSnap = await db.collection("contracts").doc(payment.contract_id).get();
-    const contract = convertSnapshot<Contract>(contractSnap);
-    
-    const apartmentSnap = await db.collection("apartments").doc(contract.apartment_id).get();
-    const apartment = convertSnapshot<Apartment>(apartmentSnap);
-
-    const projectSnap = await db.collection("projects").doc(contract.project_id).get();
-    const project = convertSnapshot<Project>(projectSnap);
-
-    return { payment, client, contract, apartment, project };
+    const pSnap = await db.collection("payments").doc(paymentId).get();
+    const payment = convertSnapshot<Payment>(pSnap);
+    const cSnap = await db.collection("contracts").doc(payment.contract_id).get();
+    const contract = convertSnapshot<Contract>(cSnap);
+    const client = convertSnapshot<Client>(await db.collection("clients").doc(payment.client_id).get());
+    const apartment = convertSnapshot<Apartment>(await db.collection("apartments").doc(contract.apartment_id).get());
+    const project = convertSnapshot<Project>(await db.collection("projects").doc(contract.project_id).get());
+    const pays = await db.collection("payments").where("contract_id", "==", contract.id).where("status", "==", PaymentStatus.Paid).get();
+    const allContractPayments = pays.docs.map(doc => convertSnapshot<Payment>(doc));
+    return { payment, client, contract, apartment, project, allContractPayments };
 };
 
 export interface ReservationData {
-    contract: Contract;
-    client: Client;
-    apartment: Apartment;
-    project: Project;
-    totalPaid: number;
+    contract: Contract; client: Client; apartment: Apartment; project: Project; totalPaid: number;
 }
 
 export const getReservationData = async (contractId: string): Promise<ReservationData> => {
     if (isDemo) {
         const contract = mockDb.contracts.find(c => c.id === contractId);
-        if (!contract) throw new Error("Contrat non trouvé");
-        const client = mockDb.clients.find(c => c.id === contract.client_id);
-        const apartment = mockDb.apartments.find(a => a.id === contract.apartment_id);
-        const project = mockDb.projects.find(p => p.id === contract.project_id);
-        
-        if (!client || !apartment || !project) throw new Error("Données associées manquantes");
-
-        const totalPaid = mockDb.payments
-            .filter(p => p.contract_id === contractId && p.status === PaymentStatus.Paid)
-            .reduce((sum, p) => sum + p.amount_dh, 0);
-
+        const client = mockDb.clients.find(c => c.id === contract?.client_id);
+        const apartment = mockDb.apartments.find(a => a.id === contract?.apartment_id);
+        const project = mockDb.projects.find(p => p.id === contract?.project_id);
+        const totalPaid = mockDb.payments.filter(p => p.contract_id === contractId && p.status === PaymentStatus.Paid).reduce((sum, p) => sum + p.amount_dh, 0);
+        if (!contract || !client || !apartment || !project) throw new Error("Missing data");
         return { contract, client, apartment, project, totalPaid };
     }
-
-    const contractSnap = await db.collection("contracts").doc(contractId).get();
-    if (!contractSnap.exists) throw new Error("Contrat non trouvé");
-    const contract = convertSnapshot<Contract>(contractSnap);
-
-    const clientSnap = await db.collection("clients").doc(contract.client_id).get();
-    const client = convertSnapshot<Client>(clientSnap);
-
-    const apartmentSnap = await db.collection("apartments").doc(contract.apartment_id).get();
-    const apartment = convertSnapshot<Apartment>(apartmentSnap);
-
-    const projectSnap = await db.collection("projects").doc(contract.project_id).get();
-    const project = convertSnapshot<Project>(projectSnap);
-
-    // Calculate total payments made for this contract (reservation amount)
-    const paymentsQuery = await db.collection("payments")
-        .where("contract_id", "==", contractId)
-        .where("status", "==", PaymentStatus.Paid)
-        .get();
-    
-    const totalPaid = paymentsQuery.docs
-        .map(doc => convertSnapshot<Payment>(doc))
-        .reduce((sum, p) => sum + p.amount_dh, 0);
-
+    const contract = convertSnapshot<Contract>(await db.collection("contracts").doc(contractId).get());
+    const client = convertSnapshot<Client>(await db.collection("clients").doc(contract.client_id).get());
+    const apartment = convertSnapshot<Apartment>(await db.collection("apartments").doc(contract.apartment_id).get());
+    const project = convertSnapshot<Project>(await db.collection("projects").doc(contract.project_id).get());
+    const pays = await db.collection("payments").where("contract_id", "==", contractId).where("status", "==", PaymentStatus.Paid).get();
+    const totalPaid = pays.docs.reduce((sum, d) => sum + (d.data().amount_dh || 0), 0);
     return { contract, client, apartment, project, totalPaid };
 };
