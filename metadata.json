@@ -1,5 +1,5 @@
 {
-  "name": "Nafat Immobilier v03",
-  "description": "Une application web moderne de gestion locative immobilière pour gérer les projets, les appartements, les clients et les contrats de location. L'interface est épurée, à base de blanc, avec des bordures lisses et organisée en sections claires pour une gestion immobilière efficace.",
+  "name": "Nafat Immobilier",
+  "description": "Application professionnelle de gestion immobilière permettant la gestion des projets, appartements, clients et contrats avec suivi des versements et génération de documents.",
   "requestFramePermissions": []
 }

@@ -1,6 +1,7 @@
 
 export enum ProjectStatus {
   Active = 'active',
+  InProgress = 'in_progress',
   Paused = 'paused',
   Completed = 'completed'
 }
@@ -49,6 +50,7 @@ export interface Project {
   updated_by?: string;
   num_floors: number;
   has_rdc: boolean;
+  registered_count?: number;
 }
 
 export interface Apartment {

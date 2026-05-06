@@ -15,7 +15,7 @@ import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import SettingsPage from './pages/SettingsPage';
 import RejectedSalesPage from './pages/RejectedSalesPage';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from './auth/AuthContext';
 import { seedAdminUser } from './firebase/seed';
 import SplashScreen from './components/SplashScreen';
 
@@ -33,7 +33,7 @@ const Layout: React.FC = () => (
     <div className="flex-1 flex flex-col overflow-hidden">
       <Header />
       <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
           <Outlet />
         </div>
       </main>
