@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
     "firebase": "^10.12.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

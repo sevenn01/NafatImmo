@@ -1,5 +1,6 @@
 {
-  "name": "Nafat Immobilier",
+  "name": "NafatImmo",
   "description": "Application professionnelle de gestion immobilière permettant la gestion des projets, appartements, clients et contrats avec suivi des versements et génération de documents.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }
